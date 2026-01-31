@@ -1,0 +1,6 @@
+pandas
+requests
+shapely
+ipykernel
+pyarrow
+psycopg2-binary

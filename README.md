@@ -15,12 +15,22 @@ Which factors most strongly influence apartment sale prices in Sydney, and how a
     - https://www.rba.gov.au/statistics/tables/csv/g1-data.csv?v=2026-01-19-13-03-25  has the Consumer Price Index dating back to 1922. 
     - https://www.rba.gov.au/statistics/tables/csv/f5-data.csv?v=2026-01-19-13-03-25 has Indicator Lending rates dating back to 1959
 - Domain API (Current listings) to be considered for future enhancement
+### Data Dictionary
+see `entity_relationship_diagram.md` for a mermaid ERD with data definitions. 
 
+[sales]: https://valuation.property.nsw.gov.au/embed/propertySalesInformation
+[spatial]: https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme_multiCRS/FeatureServer/12/query
 ## Planned Approach
-- Cloud-based SQL analysis using AWS Athena
-- Data cleaning and feature engineering in Python
-- Regression and tree-based machine learning models
-- Model evaluation and interpretability analysis
+# Property Project Research
+Using this document to save and collect thoughts.
+## Current Process to collect data
+1. Use Google Maps to define a polygon that includes all the Local Government Areas (LGAs) of interest, save as a KML (?) file.
+2. Re-write `nsw_units_pipeline.py`, `01_import_from_NSW_arcGIS_REST.ipynb` to deal with 
+    a polygon. Create a new module to accept the KML file and re-write it for input into
+    [NSW Spatial][spatial].\
+    Data to extract from [N]
+
+
 
 ## Deliverables
 - Clean analytical dataset
@@ -31,6 +41,31 @@ Which factors most strongly influence apartment sale prices in Sydney, and how a
 - Domain API (Current listings) integration
 
 ## Process 
-1. Extract data locally from Annual Sales (~340 MB) reducing it to just the desired
-LGAs and property types. Save the result as historical-sales.csv (or zip) for upload
-to Amazon S3 bucket arn:aws:s3:::sydney-units-raw
+1.  Specify a rectangle that includes all properties of interest using Google Plus Codes. 
+    This will include the LGAs of Canada Bay, Ryde, and the City of Parramatta. Naturally,
+    it will overlap into other LGAs. __Future development__ supply a polygon.
+2.  Convert the Google Plus Codes to Lat/Long for input to [Spatial][spatial]
+3.  Tile the input area and extract data into Pandas data frames: 
+    1.  Extract the 'Principal Addresses' where\
+    `principaladdresstype = 1 AND superlot='Y' AND enddate = 32503680000000`\
+    This selects the blocks of units that are still in existance.
+    May want to use `urbanity='U'`. Only interested in the following fields, :\ 
+    `[valnetlotcount, propid, address, centroid.x, centroid.y, OBJECTID]`\
+    (NB: **OBJECTID** is unique)
+    2. Extract the 'Secondary Address' where\
+    `principaladdresstype = 2 AND propid IN {SELECT propid FROM step 1}`\
+    The output fields of interest are, note `(housenumber,propid)` is unique:\
+    `[housenumber, propid, OBJECTID]`
+
+    NB 1: The documents suggest that I should be able to get the `council` and 
+    `deliverypointid`. If so, I will.\
+    NB 2: The `propid` is the link to the NSW Valuer Generals data
+4.  Extract Property sales data from [Valuer General][valgen]. Note:
+    1.  Two fields are required for uniqueness `propid,unit`
+    2.  Historical data will be processed locally from Annual Sales (~340 MB) reducing 
+    it to just the desired LGAs and property types. 
+    3.  For the current year - upload the weekly ZIP files to AWS S3 and process.
+    4.  Wish to keep all sales.
+
+[valgen]: https://valuation.property.nsw.gov.au/embed/propertySalesInformation
+[spatial]: https://portal.spatial.nsw.gov.au/server/rest/services/NSW_Land_Parcel_Property_Theme_multiCRS/FeatureServer/12/quer
