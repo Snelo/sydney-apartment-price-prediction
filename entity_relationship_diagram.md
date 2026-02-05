@@ -131,10 +131,8 @@ erDiagram
     date observation_date
     decimal value
   }
-
-
-
-```### AddressPoint
+```
+### AddressPoint
 A point feature class used to spatially locate an address / AddressString.
 
 | Attribute Name | Data Type | Nulls | Contraints | Description | Source |
